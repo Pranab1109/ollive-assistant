@@ -24,6 +24,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    def mask(val: str) -> str:
+        if not val:
+            return "empty"
+        if len(val) <= 8:
+            return "***"
+        return f"{val[:4]}...{val[-4:]}"
+    logger.info("========================================")
+    logger.info("APPLICATION STARTUP CONFIGURATION:")
+    logger.info(f"GEMINI_API_KEY: {mask(settings.GEMINI_API_KEY)}")
+    logger.info(f"HF_SPACE_MODEL_URL: {settings.HF_SPACE_MODEL_URL or 'empty'}")
+    logger.info(f"HF_TOKEN: {mask(settings.HF_TOKEN)}")
+    logger.info(f"OLLAMA_BASE_URL: {settings.OLLAMA_BASE_URL}")
+    logger.info(f"OSS_MODEL_NAME: {settings.OSS_MODEL_NAME}")
+    logger.info("========================================")
+
 # CORS configurations for local frontend development
 app.add_middleware(
     CORSMiddleware,
@@ -71,7 +88,12 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=400, detail="No user message found in history.")
 
     # Initialize Trace directly using the router's query_id
-    model_name = "gemini-2.5-flash" if request.model_type == "frontier" else settings.OSS_MODEL_NAME
+    if request.model_type == "frontier":
+        model_name = "gemini-2.5-flash"
+    elif request.model_type == "oss_hf":
+        model_name = "Qwen2.5-7B (HF)"
+    else:
+        model_name = f"{settings.OSS_MODEL_NAME} (Local)"
     trace_repo.create_trace(
         session_id=request.session_id,
         model=model_name,

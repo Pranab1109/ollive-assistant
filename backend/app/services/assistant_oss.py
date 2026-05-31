@@ -206,28 +206,36 @@ class OSSAssistant:
         
         return text
 
-    async def generate_response(self, messages: List[Dict[str, Any]], query_id: str) -> Tuple[str, List[Dict[str, Any]]]:
+    async def generate_response(self, messages: List[Dict[str, Any]], query_id: str, use_hf: bool = False) -> Tuple[str, List[Dict[str, Any]]]:
         start_time = time.time()
         
-        if settings.HF_SPACE_MODEL_URL:
-            raw_url = settings.HF_SPACE_MODEL_URL.rstrip('/')
-            if "api-inference.huggingface.co" in raw_url:
-                base_url = "https://api-inference.huggingface.co/v1/chat/completions"
+        target_url = settings.HF_SPACE_MODEL_URL if use_hf else None
+        if use_hf and not target_url:
+            target_url = "Qwen/Qwen2.5-7B-Instruct"
+
+        if target_url:
+            raw_url = target_url.strip()
+            if not raw_url.startswith("http://") and not raw_url.startswith("https://"):
+                base_url = "https://router.huggingface.co/v1/chat/completions"
+                model_to_use = raw_url
+            elif "huggingface.co" in raw_url:
+                base_url = "https://router.huggingface.co/v1/chat/completions"
                 match = re.search(r'/models/([^/]+/[^/]+)', raw_url)
                 if match:
                     model_to_use = match.group(1)
                 else:
                     model_to_use = "Qwen/Qwen2.5-7B-Instruct"
             else:
-                if raw_url.endswith("/v1/chat/completions"):
-                    base_url = raw_url
-                elif raw_url.endswith("/v1"):
-                    base_url = f"{raw_url}/chat/completions"
+                raw_url_clean = raw_url.rstrip('/')
+                if raw_url_clean.endswith("/v1/chat/completions"):
+                    base_url = raw_url_clean
+                elif raw_url_clean.endswith("/v1"):
+                    base_url = f"{raw_url_clean}/chat/completions"
                 else:
-                    base_url = f"{raw_url}/v1/chat/completions"
+                    base_url = f"{raw_url_clean}/v1/chat/completions"
                 
                 model_to_use = "tgi"
-                match = re.search(r'/models/([^/]+/[^/]+)', raw_url)
+                match = re.search(r'/models/([^/]+/[^/]+)', raw_url_clean)
                 if match:
                     model_to_use = match.group(1)
         else:
@@ -352,7 +360,7 @@ class OSSAssistant:
                 return text_response, tool_calls
 
         except httpx.ConnectError as ce:
-            is_hf = "huggingface" in base_url
+            is_hf = "huggingface" in base_url or "api-inference" in base_url
             dest = "Hugging Face Inference API" if is_hf else "local Ollama"
             logger.error(f"Failed to connect to {dest}: {ce}")
             trace_repo.add_step(query_id, "LLMNode", int((time.time() - start_time) * 1000), {"error": f"{dest} connection failure."})

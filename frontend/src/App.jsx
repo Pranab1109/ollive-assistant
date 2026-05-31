@@ -43,16 +43,25 @@ function App() {
   const [activeTab, setActiveTab] = useState("chat");
   const [chatInput, setChatInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("oss"); // "oss" or "frontier"
+  const [selectedModel, setSelectedModel] = useState("oss_local"); // "oss_local", "oss_hf", or "frontier"
   const [sessionId] = useState(() => `session_${Math.random().toString(36).substr(2, 9)}`);
   
   // Message histories maintained separately
-  const [ossMessages, setOssMessages] = useState([
-    { role: "assistant", content: "Hello! I am the Open Source Hospital Receptionist (Qwen 7B). How can I assist you at Evergreen Medical Center today?" }
+  const [ossLocalMessages, setOssLocalMessages] = useState([
+    { role: "assistant", content: "Hello! I am the Local Open Source Hospital Receptionist (Qwen 7B). How can I assist you at Evergreen Medical Center today?" }
+  ]);
+  const [ossHfMessages, setOssHfMessages] = useState([
+    { role: "assistant", content: "Hello! I am the Hugging Face Open Source Hospital Receptionist (Qwen 7B). How can I assist you at Evergreen Medical Center today?" }
   ]);
   const [frontierMessages, setFrontierMessages] = useState([
     { role: "assistant", content: "Hello! I am the Frontier Hospital Receptionist (Gemini 2.5). How can I assist you at Evergreen Medical Center today?" }
   ]);
+
+  const getMessagesState = (model) => {
+    if (model === "oss_local") return [ossLocalMessages, setOssLocalMessages];
+    if (model === "oss_hf") return [ossHfMessages, setOssHfMessages];
+    return [frontierMessages, setFrontierMessages];
+  };
 
   // Traces caches for chat messages
   const [traceLogs, setTraceLogs] = useState({});
@@ -76,7 +85,7 @@ function App() {
   // Auto-scroll chats
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [ossMessages, frontierMessages, selectedModel]);
+  }, [ossLocalMessages, ossHfMessages, frontierMessages, selectedModel]);
 
 
 
@@ -195,9 +204,12 @@ function App() {
 
   // Fetch initial appointments and platform traces
   useEffect(() => {
-    fetchAppointments();
-    fetchDoctors();
-    fetchEvals();
+    const timer = setTimeout(() => {
+      fetchAppointments();
+      fetchDoctors();
+      fetchEvals();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeTab]);
 
   const fetchTraceDetails = async (queryId) => {
@@ -219,7 +231,7 @@ function App() {
 
   const sendChatRequest = async (historyPayload, retryCount = 0) => {
     setLoading(true);
-    const isOSS = selectedModel === "oss";
+    const [_, setActiveMessages] = getMessagesState(selectedModel);
 
     try {
       const res = await fetch(`${API_BASE}/api/chat`, {
@@ -239,14 +251,10 @@ function App() {
           if (retryCount >= 3) {
             const exhaustedMessage = {
               role: "assistant",
-              content: "Evergreen Medical Center's hosted assistant (Gemini) is rate-limited. Retries exhausted. Please try again later, or switch to the local Open Source model (Qwen 7B) using the dropdown at the bottom left.",
+              content: "Evergreen Medical Center's hosted assistant (Gemini) is rate-limited. Retries exhausted. Please try again later, or switch to an Open Source model using the dropdown at the bottom left.",
               query_id: data.query_id
             };
-            if (isOSS) {
-              setOssMessages(prev => [...prev, exhaustedMessage]);
-            } else {
-              setFrontierMessages(prev => [...prev, exhaustedMessage]);
-            }
+            setActiveMessages(prev => [...prev, exhaustedMessage]);
             setLoading(false);
             return;
           }
@@ -257,22 +265,14 @@ function App() {
             query_id: data.query_id
           };
           
-          if (isOSS) {
-            setOssMessages(prev => [...prev, retryMessage]);
-          } else {
-            setFrontierMessages(prev => [...prev, retryMessage]);
-          }
+          setActiveMessages(prev => [...prev, retryMessage]);
           
           let countdown = Math.ceil(data.retry_delay || 5);
           const intervalId = setInterval(() => {
             countdown -= 1;
             const updatedContent = `Evergreen Medical Center's hosted assistant (Gemini) is rate-limited. Retrying in ${countdown} seconds... (Attempt ${retryCount + 1}/3)`;
             
-            if (isOSS) {
-              setOssMessages(prev => prev.map(m => m.query_id === data.query_id ? { ...m, content: countdown <= 0 ? "Retrying now..." : updatedContent } : m));
-            } else {
-              setFrontierMessages(prev => prev.map(m => m.query_id === data.query_id ? { ...m, content: countdown <= 0 ? "Retrying now..." : updatedContent } : m));
-            }
+            setActiveMessages(prev => prev.map(m => m.query_id === data.query_id ? { ...m, content: countdown <= 0 ? "Retrying now..." : updatedContent } : m));
             
             if (countdown <= 0) {
               clearInterval(intervalId);
@@ -286,31 +286,19 @@ function App() {
           return;
         }
 
-        if (isOSS) {
-          setOssMessages(prev => [...prev, { role: "assistant", content: data.response, query_id: data.query_id }]);
-        } else {
-          setFrontierMessages(prev => [...prev, { role: "assistant", content: data.response, query_id: data.query_id }]);
-        }
+        setActiveMessages(prev => [...prev, { role: "assistant", content: data.response, query_id: data.query_id }]);
         fetchTraceDetails(data.query_id);
         setLoading(false);
       } else {
         const errText = await res.text();
         const errorMessage = { role: "assistant", content: `Error: ${errText}` };
-        if (isOSS) {
-          setOssMessages(prev => [...prev, errorMessage]);
-        } else {
-          setFrontierMessages(prev => [...prev, errorMessage]);
-        }
+        setActiveMessages(prev => [...prev, errorMessage]);
         setLoading(false);
       }
     } catch (e) {
       console.error("Connection error:", e);
       const connErr = { role: "assistant", content: "Connection failure: backend unreachable." };
-      if (isOSS) {
-        setOssMessages(prev => [...prev, connErr]);
-      } else {
-        setFrontierMessages(prev => [...prev, connErr]);
-      }
+      setActiveMessages(prev => [...prev, connErr]);
       setLoading(false);
     } finally {
       fetchAppointments();
@@ -324,15 +312,9 @@ function App() {
     setChatInput("");
     setLoading(true);
 
-    const isOSS = selectedModel === "oss";
+    const [activeMessages, setActiveMessages] = getMessagesState(selectedModel);
+    setActiveMessages(prev => [...prev, { role: "user", content: userQuery }]);
 
-    if (isOSS) {
-      setOssMessages(prev => [...prev, { role: "user", content: userQuery }]);
-    } else {
-      setFrontierMessages(prev => [...prev, { role: "user", content: userQuery }]);
-    }
-
-    const activeMessages = isOSS ? ossMessages : frontierMessages;
     const historyPayload = [...activeMessages.slice(1), { role: "user", content: userQuery }];
 
     await sendChatRequest(historyPayload, 0);
@@ -547,7 +529,10 @@ function App() {
     }
   ] : [];
 
-  const activeMessages = selectedModel === "oss" ? ossMessages : frontierMessages;
+  const activeMessages = 
+    selectedModel === "oss_local" ? ossLocalMessages :
+    selectedModel === "oss_hf" ? ossHfMessages :
+    frontierMessages;
 
   // Lightweight markdown → JSX renderer (no external library needed)
   const renderMarkdown = (text) => {
@@ -758,7 +743,11 @@ function App() {
             {/* Header info card */}
             <div className="chat-model-banner">
               <span className="banner-tag">Active Assistant</span>
-              <h2>{selectedModel === "oss" ? "Qwen 2.5 Coder 7B (Open Source)" : "Gemini 2.5 Flash (Frontier Model)"}</h2>
+              <h2>{
+                selectedModel === "oss_local" ? "Qwen 2.5 Coder 7B (Local Open Source)" :
+                selectedModel === "oss_hf" ? "Qwen 2.5 Coder 7B (Hugging Face Open Source)" :
+                "Gemini 2.5 Flash (Frontier Model)"
+              }</h2>
               <p>State Graph Node Tracing: Active | Guardrails: Engaged | Tools: search_doctors, check_availability, book_appointment, faq_lookup</p>
             </div>
 
@@ -1197,7 +1186,8 @@ function App() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 disabled={loading}
               >
-                <option value="oss">Qwen 2.5 (OSS)</option>
+                <option value="oss_local">Qwen 2.5 (Local OSS)</option>
+                <option value="oss_hf">Qwen 2.5 (Hugging Face OSS)</option>
                 <option value="frontier">Gemini 2.5 (Frontier)</option>
               </select>
               <ChevronDown className="dropdown-arrow" size={14} />
@@ -1206,7 +1196,11 @@ function App() {
             <input 
               type="text" 
               className="query-textarea"
-              placeholder={`Converse with ${selectedModel === 'oss' ? 'Qwen 7B' : 'Gemini 2.5'}... (e.g. 'Book me a Cardiology slot for tomorrow')`}
+              placeholder={`Converse with ${
+                selectedModel === 'oss_local' ? 'Qwen 7B (Local)' :
+                selectedModel === 'oss_hf' ? 'Qwen 7B (Hugging Face)' :
+                'Gemini 2.5'
+              }... (e.g. 'Book me a Cardiology slot for tomorrow')`}
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => {

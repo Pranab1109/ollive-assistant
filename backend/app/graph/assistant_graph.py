@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from langgraph.graph import StateGraph, END
 
+from backend.app.config import settings
 from backend.app.graph.state import AgentState
 from backend.app.services.guardrails import GuardrailsService
 from backend.app.services.assistant_oss import OSSAssistant
@@ -334,8 +335,15 @@ async def llm_inference_node(state: AgentState) -> Dict[str, Any]:
     
     while True:
         try:
-            if model_type == "oss":
-                text_response, tool_calls = await oss_assistant.generate_response(messages, query_id)
+            # Map generic "oss" to the correct target for backward compatibility/evals
+            active_model = model_type
+            if active_model == "oss":
+                active_model = "oss_hf" if settings.HF_SPACE_MODEL_URL else "oss_local"
+
+            if active_model == "oss_hf":
+                text_response, tool_calls = await oss_assistant.generate_response(messages, query_id, use_hf=True)
+            elif active_model == "oss_local":
+                text_response, tool_calls = await oss_assistant.generate_response(messages, query_id, use_hf=False)
             else:
                 text_response, tool_calls = await frontier_assistant.generate_response(messages, query_id)
     
