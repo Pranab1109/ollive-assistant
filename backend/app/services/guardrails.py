@@ -83,6 +83,19 @@ DOSAGE_PATTERNS = [
     r"\bevery \d+ hours\b"
 ]
 
+MEDICATION_PATTERNS = [
+    r"\bacetaminophen\b",
+    r"\bibuprofen\b",
+    r"\baspirin\b",
+    r"\bparacetamol\b",
+    r"\bxanax\b",
+    r"\bpenicillin\b",
+    r"\bantibiotic(s)?\b",
+    r"\bmedication(s)?\b",
+    r"\bprescribe(d|s)?\b",
+    r"\bprescription(s)?\b"
+]
+
 LEAKAGE_PATTERNS = [
     r"system prompt",
     r"developer instruction",
@@ -161,7 +174,7 @@ class GuardrailsService:
         # Check Role Override attempts
         for pattern in ROLE_OVERRIDE_PATTERNS:
             if re.search(pattern, scan_text):
-                risk_score += 3
+                risk_score += 6
                 reasons.append("role_override")
                 break
                 
@@ -226,8 +239,8 @@ class GuardrailsService:
             if re.search(pattern, response_lower):
                 return False, "Flagged Output: Developer instructions leak detected."
                 
-        # 4. Check for Medical Advice (Diagnosis, Treatment, Dosage)
-        medical_patterns = MEDICAL_INFERENCE_PATTERNS + TREATMENT_PATTERNS + DOSAGE_PATTERNS
+        # 4. Check for Medical Advice (Diagnosis, Treatment, Dosage, Medications)
+        medical_patterns = MEDICAL_INFERENCE_PATTERNS + TREATMENT_PATTERNS + DOSAGE_PATTERNS + MEDICATION_PATTERNS
         for pattern in medical_patterns:
             if re.search(pattern, response_lower):
                 # Standard receptionist disclaimers are allowed
