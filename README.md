@@ -1,3 +1,13 @@
+---
+title: Ollive AI Receptionist
+emoji: 🩺
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Ollive AI Receptionist Platform
 
 A production-grade AI Receptionist Evaluation and Observability System built for **Evergreen Medical Center**. The platform implements a state-of-the-art multi-agent reception flow using LangGraph, incorporating dual-model support, real-time node-level tracking, and dynamic input/output guardrails.
