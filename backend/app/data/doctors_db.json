@@ -1,0 +1,127 @@
+{
+  "hospital_name": "Evergreen Medical Center",
+  "hospital_address": "123 Care Drive, Springvale",
+  "emergency_phone": "555-0100",
+  "general_phone": "555-0199",
+  "doctors": [
+    {
+      "id": "doc_001",
+      "name": "Dr. Alice Smith",
+      "specialty": "Cardiology",
+      "room": "Room 102",
+      "phone_ext": "1021",
+      "bio": "Board-certified cardiologist with 15 years of experience specializing in preventive cardiology and heart failure management.",
+      "accepted_insurance": ["BlueShield", "Aetna", "Cigna", "HealthFirst"],
+      "weekly_schedule": {
+        "Monday":    ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM"],
+        "Tuesday":   ["09:00 AM", "11:00 AM", "02:00 PM"],
+        "Wednesday": ["10:00 AM", "11:30 AM", "03:00 PM", "04:30 PM"],
+        "Thursday":  ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM"],
+        "Friday":    ["09:00 AM", "11:00 AM", "02:00 PM"],
+        "Saturday":  [],
+        "Sunday":    []
+      }
+    },
+    {
+      "id": "doc_002",
+      "name": "Dr. Bob Johnson",
+      "specialty": "Pediatrics",
+      "room": "Room 205",
+      "phone_ext": "2051",
+      "bio": "Compassionate pediatrician with 10 years of experience. Specializes in childhood immunizations, developmental assessments, and adolescent medicine.",
+      "accepted_insurance": ["BlueShield", "Aetna", "HealthFirst"],
+      "weekly_schedule": {
+        "Monday":    ["08:30 AM", "11:00 AM", "01:30 PM", "03:00 PM"],
+        "Tuesday":   ["08:30 AM", "10:00 AM", "01:30 PM", "03:00 PM", "04:30 PM"],
+        "Wednesday": ["09:00 AM", "11:00 AM", "02:00 PM"],
+        "Thursday":  ["08:30 AM", "11:00 AM", "01:30 PM", "03:00 PM"],
+        "Friday":    ["08:30 AM", "10:00 AM", "01:30 PM"],
+        "Saturday":  ["09:00 AM", "11:00 AM"],
+        "Sunday":    []
+      }
+    },
+    {
+      "id": "doc_003",
+      "name": "Dr. Clara Lee",
+      "specialty": "Neurology",
+      "room": "Room 310",
+      "phone_ext": "3101",
+      "bio": "Neurologist specializing in migraines, epilepsy, and neurodegenerative disorders. Over 12 years of clinical and research experience.",
+      "accepted_insurance": ["BlueShield", "Cigna", "HealthFirst"],
+      "weekly_schedule": {
+        "Monday":    ["10:00 AM", "11:30 AM", "02:30 PM", "04:00 PM"],
+        "Tuesday":   ["10:00 AM", "02:00 PM", "04:00 PM"],
+        "Wednesday": ["09:00 AM", "11:00 AM", "02:30 PM", "04:00 PM"],
+        "Thursday":  ["10:00 AM", "11:30 AM", "02:30 PM"],
+        "Friday":    ["10:00 AM", "11:30 AM", "02:30 PM", "04:00 PM"],
+        "Saturday":  [],
+        "Sunday":    []
+      }
+    },
+    {
+      "id": "doc_004",
+      "name": "Dr. David Kim",
+      "specialty": "General Medicine",
+      "room": "Room 101",
+      "phone_ext": "1011",
+      "bio": "Internal medicine physician with 20 years of experience. Handles routine checkups, chronic disease management, and urgent walk-in consultations.",
+      "accepted_insurance": ["BlueShield", "Aetna", "Cigna", "HealthFirst"],
+      "weekly_schedule": {
+        "Monday":    ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"],
+        "Tuesday":   ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"],
+        "Wednesday": ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM"],
+        "Thursday":  ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"],
+        "Friday":    ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM"],
+        "Saturday":  ["09:00 AM", "10:00 AM", "11:00 AM"],
+        "Sunday":    []
+      }
+    },
+    {
+      "id": "doc_005",
+      "name": "Dr. Emily Chen",
+      "specialty": "Orthopedics",
+      "room": "Room 208",
+      "phone_ext": "2081",
+      "bio": "Orthopedic surgeon specializing in sports injuries, joint replacements, and fracture management. 8 years of surgical experience.",
+      "accepted_insurance": ["BlueShield", "Aetna", "Cigna"],
+      "weekly_schedule": {
+        "Monday":    ["09:00 AM", "11:00 AM", "02:00 PM"],
+        "Tuesday":   ["09:00 AM", "10:30 AM", "02:00 PM", "04:00 PM"],
+        "Wednesday": [],
+        "Thursday":  ["09:00 AM", "11:00 AM", "02:00 PM", "04:00 PM"],
+        "Friday":    ["09:00 AM", "10:30 AM", "02:00 PM"],
+        "Saturday":  [],
+        "Sunday":    []
+      }
+    },
+    {
+      "id": "doc_006",
+      "name": "Dr. Frank Patel",
+      "specialty": "Dermatology",
+      "room": "Room 115",
+      "phone_ext": "1151",
+      "bio": "Dermatologist focused on skin cancer screening, acne treatment, and cosmetic procedures. 11 years of practice.",
+      "accepted_insurance": ["Aetna", "Cigna", "HealthFirst"],
+      "weekly_schedule": {
+        "Monday":    ["10:00 AM", "11:30 AM", "03:00 PM"],
+        "Tuesday":   [],
+        "Wednesday": ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM"],
+        "Thursday":  ["10:00 AM", "11:30 AM", "03:00 PM"],
+        "Friday":    ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM"],
+        "Saturday":  [],
+        "Sunday":    []
+      }
+    }
+  ],
+  "hospital_faq": {
+    "address": "Evergreen Medical Center is located at 123 Care Drive, Springvale. The emergency room is open 24/7.",
+    "visiting_hours": "General wards visiting hours are daily from 10:00 AM to 12:00 PM and from 04:00 PM to 07:00 PM. ICU visiting hours are strictly restricted to 11:00 AM to 12:00 PM.",
+    "insurance": "We accept major insurance providers: BlueShield, Aetna, Cigna, and HealthFirst. We do not accept Medicare or international insurances directly, but we can provide itemized receipts for self-reimbursement.",
+    "room_rates": "General Ward: $150 per night. Semi-Private Room: $300 per night. Private Suite: $600 per night.",
+    "parking": "Visitor parking is free for the first 2 hours, then $5/hour up to a daily maximum of $20. Valet parking is available at the Main Entrance for a flat fee of $15.",
+    "contact": "For general inquiries, call 555-0199. For emergencies, call 555-0100.",
+    "pharmacy": "Our in-house pharmacy is open Monday–Saturday from 8:00 AM to 8:00 PM. Prescriptions filled by our doctors can be picked up within 30 minutes.",
+    "emergency": "For life-threatening emergencies, please call 911 or come directly to our 24/7 Emergency Room entrance on the east wing.",
+    "cafeteria": "The hospital cafeteria is open daily from 7:00 AM to 9:00 PM. Dietary-restricted meals are available upon request for admitted patients."
+  }
+}

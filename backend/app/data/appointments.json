@@ -1,0 +1,46 @@
+[
+  {
+    "id": "APT-5812D91B",
+    "patient": "",
+    "doctor": "Dr. Alice Smith",
+    "specialty": "Cardiology",
+    "room": "Room 102",
+    "date": "2026-06-01",
+    "time": "02:00 PM",
+    "status": "confirmed",
+    "booked_at": "2026-05-30T13:46:25.212264"
+  },
+  {
+    "id": "APT-B876DC97",
+    "patient": "Pranab",
+    "doctor": "Dr. Alice Smith",
+    "specialty": "Cardiology",
+    "room": "Room 102",
+    "date": "2026-06-01",
+    "time": "09:00 AM",
+    "status": "confirmed",
+    "booked_at": "2026-05-31T13:20:47.463040"
+  },
+  {
+    "id": "APT-7BB33F2B",
+    "patient": "Pranab",
+    "doctor": "Dr. Alice Smith",
+    "specialty": "Cardiology",
+    "room": "Room 102",
+    "date": "2026-06-01",
+    "time": "10:30 AM",
+    "status": "confirmed",
+    "booked_at": "2026-05-31T13:21:11.694131"
+  },
+  {
+    "id": "APT-A553798B",
+    "patient": "Pranab Saha",
+    "doctor": "Dr. Alice Smith",
+    "specialty": "Cardiology",
+    "room": "Room 102",
+    "date": "2026-06-01",
+    "time": "04:30 PM",
+    "status": "confirmed",
+    "booked_at": "2026-05-31T13:28:41.994006"
+  }
+]
