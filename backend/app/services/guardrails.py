@@ -42,7 +42,12 @@ ROLE_OVERRIDE_PATTERNS = [
     r"roleplay as",
     r"ignore your role",
     r"stop being a receptionist",
-    r"switch to doctor mode"
+    r"switch to doctor mode",
+    r"\byou\s+are\s+(a\s+)?(doctor|physician|nurse|practitioner|clinician)\b",
+    r"prescribe\s+me",               # "prescribe me medicine"
+    r"you\s+are\s+a\s+doctor",       # explicit flat match as backup
+    r"give\s+me\s+(a\s+)?diagnosis", 
+    r"what\s+(medicine|medication|drug)\s+should\s+i\s+take",
 ]
 
 PROMPT_INJECTION_PATTERNS = [
@@ -148,18 +153,16 @@ RISK_WEIGHTS = {
 
 
 def normalize_text(text: str) -> str:
-    """
-    Normalizes text to defeat spacing obfuscation, Unicode homoglyphs, and leet-speak.
-    """
-    # Normalize unicode (e.g. ａｃｔ ａｓ -> act as)
+    """Normalizes unicode and leet-speak only. Preserves word spacing."""
     text = unicodedata.normalize("NFKC", text)
-    # Collapse whitespace injected between characters (y o u -> you)
-    text = re.sub(r'(\w)\s+(\w)', r'\1\2', text)
-    # Strip common leet-speak substitutions
     leet_map = str.maketrans("013456789@$", "oieashgtbas")
     return text.lower().translate(leet_map)
 
+def collapse_spaced_text(text: str) -> str:
+    """Collapses spaced-out single characters: 'y o u' → 'you'. Run alongside normalized text."""
+    return re.sub(r'(?<!\w)(\w)\s+(?=\w(?:\s+\w)*(?!\w))', r'\1', text)
 
+    
 def decode_text(text: str) -> str:
     """
     Decodes potential Base64, Hex, URL-encoded, and ROT13 representations in the text for scanning.
@@ -272,63 +275,61 @@ class GuardrailsService:
         Returns: (is_safe: bool, reason: str)
         """
         await asyncio.sleep(0.05)
-        
-        query_clean = query.strip()
-        query_lower = normalize_text(query_clean)
-        
-        # 1. Check for Emergency (High Priority Escalation)
-        for pattern in EMERGENCY_PATTERNS:
-            if re.search(pattern, query_lower):
-                return False, "This may be a medical emergency. Please contact emergency services immediately or visit the nearest emergency department."
-                
-        # 2. Decode hidden encoded payloads (Base64/Hex/URL/ROT13) and scan them
+
+        query_clean     = query.strip()
+        query_lower     = normalize_text(query_clean)
+        query_collapsed = collapse_spaced_text(query_lower)
+
+        def matches_any(patterns: list, *texts: str) -> bool:
+            return any(re.search(p, t) for p in patterns for t in texts)
+
+        # 1. Emergency check (highest priority — exits immediately)
+        if matches_any(EMERGENCY_PATTERNS, query_lower, query_collapsed):
+            return False, "This may be a medical emergency. Please contact emergency services immediately or visit the nearest emergency department."
+
+        # 2. Decode hidden encoded payloads and build full scan surface
         decoded = decode_text(query_clean)
-        scan_text = query_lower
+        scan_texts = [query_lower, query_collapsed]
         if decoded:
-            scan_text += " | decoded: " + decoded
-            
+            scan_texts.append("decoded: " + decoded)
+
         risk_score = 0
         reasons = []
-        
-        # Check Role Override attempts
-        for pattern in ROLE_OVERRIDE_PATTERNS:
-            if re.search(pattern, scan_text):
-                risk_score += RISK_WEIGHTS["role_override"]["score"]
-                reasons.append("role_override")
-                break
-                
-        # Check Prompt Injection attempts
-        for pattern in PROMPT_INJECTION_PATTERNS:
-            if re.search(pattern, scan_text):
-                risk_score += RISK_WEIGHTS["prompt_injection"]["score"]
-                reasons.append("prompt_injection")
-                break
-                
-        # Check Out-of-Scope content
-        for pattern in OUT_OF_SCOPE_PATTERNS:
-            if re.search(pattern, scan_text):
-                risk_score += RISK_WEIGHTS["out_of_scope"]["score"]
-                reasons.append("out_of_scope")
-                break
-                
-        # Check PII (Credit Cards / SSN)
-        cc_pattern = r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b"
+
+        # 3. Role Override
+        if matches_any(ROLE_OVERRIDE_PATTERNS, *scan_texts):
+            risk_score += RISK_WEIGHTS["role_override"]["score"]
+            reasons.append("role_override")
+
+        # 4. Prompt Injection
+        if matches_any(PROMPT_INJECTION_PATTERNS, *scan_texts):
+            risk_score += RISK_WEIGHTS["prompt_injection"]["score"]
+            reasons.append("prompt_injection")
+
+        # 5. Out of Scope
+        if matches_any(OUT_OF_SCOPE_PATTERNS, *scan_texts):
+            risk_score += RISK_WEIGHTS["out_of_scope"]["score"]
+            reasons.append("out_of_scope")
+
+        # 6. PII (run on original casing to preserve digit/dash patterns)
+        cc_pattern  = r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b"
         ssn_pattern = r"\b\d{3}-\d{2}-\d{4}\b"
         if re.search(cc_pattern, query_clean) or re.search(ssn_pattern, query_clean):
             risk_score += RISK_WEIGHTS["pii_leak"]["score"]
             reasons.append("pii_leak")
-            
+
+        # 7. Encoded text penalty (presence of any decoded payload is suspicious)
         if decoded:
             risk_score += RISK_WEIGHTS["encoded_text"]["score"]
             reasons.append("encoded_text")
-            
-        # Decision Logic based on Risk Score and Severity Tiers
+
+        # 8. Decision — CRITICAL tier blocks immediately regardless of score
         if any(RISK_WEIGHTS.get(r, {}).get("tier") == "CRITICAL" for r in reasons):
             return False, f"Flagged Input: Critical policy violation detected ({', '.join(reasons)})."
-            
+
         if risk_score >= 5:
             return False, f"Flagged Input: Policy violation detected ({', '.join(reasons)})."
-            
+
         return True, "Passed: Input is safe."
 
     @staticmethod
