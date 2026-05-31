@@ -211,19 +211,25 @@ class OSSAssistant:
         
         if settings.HF_SPACE_MODEL_URL:
             raw_url = settings.HF_SPACE_MODEL_URL.rstrip('/')
-            if raw_url.endswith("/v1/chat/completions"):
-                base_url = raw_url
-            elif raw_url.endswith("/v1"):
-                base_url = f"{raw_url}/chat/completions"
+            if "api-inference.huggingface.co" in raw_url:
+                base_url = "https://api-inference.huggingface.co/v1/chat/completions"
+                match = re.search(r'/models/([^/]+/[^/]+)', raw_url)
+                if match:
+                    model_to_use = match.group(1)
+                else:
+                    model_to_use = "Qwen/Qwen2.5-7B-Instruct"
             else:
-                base_url = f"{raw_url}/v1/chat/completions"
-            
-            # Extract model name if the URL is in the Hugging Face Inference API format
-            # e.g., https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct
-            model_to_use = "tgi"
-            match = re.search(r'/models/([^/]+/[^/]+)', raw_url)
-            if match:
-                model_to_use = match.group(1)
+                if raw_url.endswith("/v1/chat/completions"):
+                    base_url = raw_url
+                elif raw_url.endswith("/v1"):
+                    base_url = f"{raw_url}/chat/completions"
+                else:
+                    base_url = f"{raw_url}/v1/chat/completions"
+                
+                model_to_use = "tgi"
+                match = re.search(r'/models/([^/]+/[^/]+)', raw_url)
+                if match:
+                    model_to_use = match.group(1)
         else:
             base_url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions"
             model_to_use = self.model_name
@@ -346,9 +352,14 @@ class OSSAssistant:
                 return text_response, tool_calls
 
         except httpx.ConnectError as ce:
-            logger.error(f"Failed to connect to local Ollama: {ce}")
-            trace_repo.add_step(query_id, "LLMNode", int((time.time() - start_time) * 1000), {"error": "Ollama connection failure."})
-            raise Exception("Cannot connect to local Ollama server. Check that Ollama is running.")
+            is_hf = "huggingface" in base_url
+            dest = "Hugging Face Inference API" if is_hf else "local Ollama"
+            logger.error(f"Failed to connect to {dest}: {ce}")
+            trace_repo.add_step(query_id, "LLMNode", int((time.time() - start_time) * 1000), {"error": f"{dest} connection failure."})
+            if is_hf:
+                raise Exception("Cannot connect to Hugging Face Inference API. Check the URL and token.")
+            else:
+                raise Exception("Cannot connect to local Ollama server. Check that Ollama is running.")
         except Exception as e:
             logger.error(f"Error calling OSS model: {e}")
             trace_repo.add_step(query_id, "LLMNode", int((time.time() - start_time) * 1000), {"error": str(e)})
