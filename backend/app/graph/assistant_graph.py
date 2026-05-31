@@ -9,7 +9,7 @@ from langgraph.graph import StateGraph, END
 
 from backend.app.config import settings
 from backend.app.graph.state import AgentState
-from backend.app.services.guardrails import GuardrailsService
+from backend.app.services.guardrails import GuardrailsService, session_guardrail
 from backend.app.services.assistant_oss import OSSAssistant
 from backend.app.services.assistant_frontier import FrontierAssistant
 from backend.app.services.observability import trace_repo
@@ -272,7 +272,18 @@ def _extract_booking_from_hallucination(messages, hallucinated_response):
 async def input_guardrail_node(state: AgentState) -> Dict[str, Any]:
     start_time = time.time()
     query_id = state["query_id"]
+    session_id = state["session_id"]
     
+    # 1. Check Session rate limiting
+    if session_guardrail.is_blocked(session_id):
+        refusal = "Session temporarily blocked due to repeated policy violations."
+        latency = int((time.time() - start_time) * 1000)
+        trace_repo.add_step(query_id, "InputGuardrail", latency, {"safe": False, "reason": refusal})
+        trace_repo.update_guardrails(query_id, input_safe=False, input_reason=refusal)
+        return {
+            "refusal_message": refusal
+        }
+        
     # Get last user message
     user_query = ""
     for msg in reversed(state["messages"]):
@@ -280,14 +291,23 @@ async def input_guardrail_node(state: AgentState) -> Dict[str, Any]:
             user_query = msg["content"]
             break
             
+    if not user_query:
+        return {
+            "refusal_message": "No query found."
+        }
+        
     is_safe, reason = await GuardrailsService.verify_input(user_query)
     
+    # If not safe, record the flag on the session
+    if not is_safe:
+        session_guardrail.record_flag(session_id)
+        
     latency = int((time.time() - start_time) * 1000)
     trace_repo.add_step(query_id, "InputGuardrail", latency, {"safe": is_safe, "reason": reason})
     trace_repo.update_guardrails(query_id, input_safe=is_safe, input_reason=reason)
     
     if not is_safe:
-        if "emergency" in reason.lower() or "out-of-scope" in reason.lower() or "this may be a medical emergency" in reason.lower():
+        if "emergency" in reason.lower() or "out-of-scope" in reason.lower() or "this may be a medical emergency" in reason.lower() or "policy violation" in reason.lower():
             refusal = reason
         else:
             refusal = f"I apologize, but I cannot assist with that request. Reason: {reason}"
