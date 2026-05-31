@@ -35,7 +35,9 @@ import {
   XCircle
 } from 'lucide-react';
 
-const API_BASE = "http://localhost:7860";
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:7860"
+  : "";
 
 function App() {
   const [activeTab, setActiveTab] = useState("chat");
