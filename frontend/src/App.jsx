@@ -759,7 +759,7 @@ function App() {
                     {msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content}
                   </div>
                   {msg.query_id && (
-                    <div style={{ width: '100%', maxWidth: '85%', marginTop: '0.25rem' }}>
+                    <div style={{ width: '100%', maxWidth: '92%', marginTop: '0.25rem' }}>
                       <button 
                         className="trace-trigger"
                         onClick={() => toggleTraceAccordion(msg.query_id)}
@@ -909,7 +909,7 @@ function App() {
                                   {item.category}
                                 </span>
                               </td>
-                              <td style={{ fontWeight: 600, maxWidth: '200px' }}>{item.query}</td>
+                              <td style={{ fontWeight: 600, maxWidth: '200px', wordBreak: 'break-word', whiteSpace: 'normal' }}>{item.query}</td>
                               <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 <strong>Score {item.score}/5:</strong> {item.response}
                               </td>
