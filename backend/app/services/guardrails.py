@@ -135,10 +135,16 @@ OFFENSIVE_PATTERNS = [
 ]
 
 SAFE_MEDICAL_CONTEXT_PATTERNS = [
-    r"(cannot|unable to|not able to)\s.{0,60}(diagnose|prescribe|recommend|advise)",
-    r"(consult|please\s+see|recommend\s+seeing)\s+a\s+(doctor|physician|specialist|professional)",
-    r"(schedule|book)\s+(an\s+)?(appointment|consultation)",
-    r"i('m|\s+am)\s+not\s+(a\s+)?(doctor|medical)",
+    # 1. Refusals and redirects
+    r"(cannot|unable to|not able to|not authorized to)\s.{0,100}(diagnose|prescribe|prescription|recommend|advise|medication)(s)?(?:\s+[\w\-]+){0,5}",
+    r"(consult|please\s+see|recommend\s+seeing|contact|speak\s+with|visit|appointment\s+with)\s+(?:a|an|your|the|our)?\s*(doctor|physician|specialist|professional|emergency|ward|clinic)(?:\s+[\w\-]+){0,5}",
+    r"i('m|\s+am)\s+not\s+(?:a|authorized|trained|able)\s.{0,60}(doctor|medical|diagnose|prescribe|prescription|medication)(?:\s+[\w\-]+){0,5}",
+    r"(schedule|book)\s+(?:an?\s+)?(?:doctor\s+)?(?:appointment|consultation)(?:\s+[\w\-]+){0,5}",
+    
+    # 2. Pharmacy/prescriptions logistics & FAQ info
+    r"\bprescriptions?\s+(?:filled|picked?\s+up|can\s+be\s+picked?\s+up|pickup|ready)\b",
+    r"\bpharmacy\b.*\b(open|hours|pick|fill|collect)\b",
+    r"\b(open|hours|pick|fill|collect)\b.*\bpharmacy\b",
 ]
 
 # --- SEVERITY RISK MATRIX ---
@@ -229,9 +235,35 @@ def is_safe_medical_response(response: str) -> bool:
     """
     Returns True only if medical terminology appears strictly inside a
     genuine refusal or redirect context — not just anywhere in the response.
+    Splits the response into occurrences of medical terms and ensures that
+    every occurrence is subsumed by a safe context pattern.
     """
     response_lower = response.lower()
-    return any(re.search(p, response_lower) for p in SAFE_MEDICAL_CONTEXT_PATTERNS)
+    
+    medical_patterns = MEDICAL_INFERENCE_PATTERNS + TREATMENT_PATTERNS + DOSAGE_PATTERNS + MEDICATION_PATTERNS
+    med_intervals = []
+    for pattern in medical_patterns:
+        for match in re.finditer(pattern, response_lower):
+            med_intervals.append(match.span())
+            
+    if not med_intervals:
+        return True
+        
+    safe_intervals = []
+    for pattern in SAFE_MEDICAL_CONTEXT_PATTERNS:
+        for match in re.finditer(pattern, response_lower):
+            safe_intervals.append(match.span())
+            
+    for m_start, m_end in med_intervals:
+        covered = False
+        for s_start, s_end in safe_intervals:
+            if s_start <= m_start and m_end <= s_end:
+                covered = True
+                break
+        if not covered:
+            return False
+            
+    return True
 
 
 class SessionGuardrail:

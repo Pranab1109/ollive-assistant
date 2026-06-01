@@ -88,12 +88,7 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=400, detail="No user message found in history.")
 
     # Initialize Trace directly using the router's query_id
-    if request.model_type == "frontier":
-        model_name = "gemini-2.5-flash"
-    elif request.model_type == "oss_hf":
-        model_name = "Qwen2.5-7B (HF)"
-    else:
-        model_name = f"{settings.OSS_MODEL_NAME} (Local)"
+    model_name = "gemini-2.5-flash" if request.model_type == "frontier" else settings.OSS_MODEL_NAME
     trace_repo.create_trace(
         session_id=request.session_id,
         model=model_name,

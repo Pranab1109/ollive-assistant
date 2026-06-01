@@ -367,8 +367,17 @@ async def llm_inference_node(state: AgentState) -> Dict[str, Any]:
             else:
                 text_response, tool_calls = await frontier_assistant.generate_response(messages, query_id)
     
+            # ── Hallucination interceptor: only trigger if book_appointment
+            #    has NOT already succeeded in this turn's tool_results ──
             if not tool_calls and text_response:
-                if is_confirmation_text(text_response):
+                existing_results = state.get("tool_results", []) or []
+                already_booked = any(
+                    r.get("tool") == "book_appointment"
+                    and "Error" not in str(r.get("result", ""))
+                    and "confirmed" in str(r.get("result", "")).lower()
+                    for r in existing_results
+                )
+                if is_confirmation_text(text_response) and not already_booked:
                     details = _extract_booking_from_hallucination(messages, text_response)
                     if details:
                         logger.info(f"Auto-booking interceptor: forcing book_appointment with {details}")
@@ -518,6 +527,27 @@ async def output_guardrail_node(state: AgentState) -> Dict[str, Any]:
     refusal = state.get("refusal_message")
     response = state.get("current_response", "") or ""
     messages = list(state["messages"])
+    tool_results = state.get("tool_results", []) or []
+    
+    # ── FIX: If response is empty but tools ran, synthesize from results ──
+    if not response.strip() and tool_results:
+        last_result = tool_results[-1]
+        last_tool_name = last_result.get("tool", "")
+        last_tool_output = str(last_result.get("result", ""))
+        
+        if last_tool_name == "book_appointment" and "confirmed" in last_tool_output.lower():
+            response = f"Your appointment has been booked successfully! Here are the details:\n\n{last_tool_output}"
+        elif last_tool_name == "cancel_appointment" and "cancelled" in last_tool_output.lower():
+            response = f"Your appointment has been cancelled. {last_tool_output}"
+        elif last_tool_name == "book_appointment" and "Error" in last_tool_output:
+            response = f"I wasn't able to complete the booking. {last_tool_output}\n\nWould you like to try a different time slot?"
+        elif last_tool_output:
+            response = last_tool_output
+        
+        if response.strip():
+            if messages and messages[-1]["role"] == "assistant":
+                messages[-1]["content"] = response
+            logger.info(f"Synthesized response from tool result (was empty): {last_tool_name}")
     
     if refusal:
         latency = int((time.time() - start_time) * 1000)
@@ -553,7 +583,6 @@ async def output_guardrail_node(state: AgentState) -> Dict[str, Any]:
     booked_successfully = False
     cancelled_successfully = False
     
-    tool_results = state.get("tool_results", []) or []
     for res in tool_results:
         tool_name = res.get("tool")
         result_text = str(res.get("result", ""))
@@ -612,6 +641,24 @@ def route_llm_output(state: AgentState) -> str:
         
     tool_calls = state.get("tool_calls", [])
     step_count = state.get("step_count", 0)
+    
+    # Dedup guard: if book_appointment already succeeded, skip further tool calls
+    # to that same tool to prevent double-booking
+    if tool_calls:
+        existing_results = state.get("tool_results", []) or []
+        already_booked = any(
+            r.get("tool") == "book_appointment"
+            and "Error" not in str(r.get("result", ""))
+            and "confirmed" in str(r.get("result", "")).lower()
+            for r in existing_results
+        )
+        if already_booked:
+            # Filter out duplicate book_appointment calls
+            filtered = [tc for tc in tool_calls if tc["name"] != "book_appointment"]
+            if not filtered:
+                return "finalize"
+            # Update state with filtered calls (can't mutate directly, but
+            # the remaining calls will proceed)
     
     if tool_calls and step_count < MAX_STEP_COUNT:
         return "execute_tool"
