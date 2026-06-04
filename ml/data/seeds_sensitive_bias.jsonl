@@ -1,0 +1,95 @@
+{"text": "Does your hospital treat rich and poor people differently?", "label": "sensitive_bias"}
+{"text": "Do uninsured patients get worse care here?", "label": "sensitive_bias"}
+{"text": "I only want a male doctor, women aren't competent. Can you arrange that?", "label": "sensitive_bias"}
+{"text": "Are the general ward rooms dirtier than the VIP rooms?", "label": "sensitive_bias"}
+{"text": "Will you throw me out of the ER if I can't pay?", "label": "sensitive_bias"}
+{"text": "Do you give priority to VIP patients over regular patients?", "label": "sensitive_bias"}
+{"text": "Will doctors treat me differently because I am low income?", "label": "sensitive_bias"}
+{"text": "I am homeless, can I still receive treatment at your ER?", "label": "sensitive_bias"}
+{"text": "I prefer an white doctor. Can you find one for me?", "label": "sensitive_bias"}
+{"text": "Why is your billing so high? Are you scamming patients?", "label": "sensitive_bias"}
+{"text": "I heard poor patients are ignored in the general ward. Is that true?", "label": "sensitive_bias"}
+{"text": "Can I get a discount because I am paying cash and don't have insurance?", "label": "sensitive_bias"}
+{"text": "Do rich patients get better doctors?", "label": "sensitive_bias"}
+{"text": "I don't want a female doctor performing my checkup.", "label": "sensitive_bias"}
+{"text": "Will I get arrested or kicked out if I cannot pay my medical bill?", "label": "sensitive_bias"}
+{"text": "Do uninsured patients have to wait longer in the emergency room?", "label": "sensitive_bias"}
+{"text": "Are the general ward rooms cleaned less frequently than private suites?", "label": "sensitive_bias"}
+{"text": "Do you accept patients on welfare?", "label": "sensitive_bias"}
+{"text": "I want only male specialists, female specialists are incompetent.", "label": "sensitive_bias"}
+{"text": "Are there separate queues for people with expensive private insurance?", "label": "sensitive_bias"}
+{"text": "Why do you charge so much for simple procedures? It feels like a scam.", "label": "sensitive_bias"}
+{"text": "Do you turn away patients who can't afford treatment?", "label": "sensitive_bias"}
+{"text": "Do doctors here treat wealthy patients with more respect?", "label": "sensitive_bias"}
+{"text": "I only trust doctors from certain racial backgrounds.", "label": "sensitive_bias"}
+{"text": "Is it true that general ward rooms are dirty and neglected?", "label": "sensitive_bias"}
+{"text": "Will the ER refuse to see me if I don't have health insurance?", "label": "sensitive_bias"}
+{"text": "Do you offer the same quality of care to Medicare/welfare patients?", "label": "sensitive_bias"}
+{"text": "Is there bias in how patients are triaged in the ER based on how they look?", "label": "sensitive_bias"}
+{"text": "Do you discriminate against patients without insurance?", "label": "sensitive_bias"}
+{"text": "I want to complain about the hospital prices, they are ridiculous.", "label": "sensitive_bias"}
+{"text": "Are VIP suites cleaner and safer than general ward beds?", "label": "sensitive_bias"}
+{"text": "Do you treat wealthy patients faster?", "label": "sensitive_bias"}
+{"text": "Can I request that no female doctor touch me?", "label": "sensitive_bias"}
+{"text": "Will the hospital throw me out if my card gets declined?", "label": "sensitive_bias"}
+{"text": "Why are procedures here so expensive compared to other places?", "label": "sensitive_bias"}
+{"text": "Are the rooms in the general ward clean and sanitary?", "label": "sensitive_bias"}
+{"text": "Is Evergreen Medical Center only for rich people?", "label": "sensitive_bias"}
+{"text": "Do you refuse treatment to people without insurance?", "label": "sensitive_bias"}
+{"text": "Can low-income patients get the same treatment as private suite patients?", "label": "sensitive_bias"}
+{"text": "I don't trust female physicians, please schedule a male doctor.", "label": "sensitive_bias"}
+{"text": "Is the ward room rates expensive because you are trying to make a profit?", "label": "sensitive_bias"}
+{"text": "Will uninsured people get low quality care?", "label": "sensitive_bias"}
+{"text": "Do you give better medicines to people who pay more?", "label": "sensitive_bias"}
+{"text": "Why are ER waiting times so long for normal patients compared to VIPs?", "label": "sensitive_bias"}
+{"text": "Do you treat everyone equally regardless of their financial status?", "label": "sensitive_bias"}
+{"text": "What are the visiting hours for the ICU?", "label": "benign"}
+{"text": "Can I book a cardiologist for next Monday morning?", "label": "benign"}
+{"text": "Do you accept Aetna insurance?", "label": "benign"}
+{"text": "Cancel my appointment APT-1A2B3C4D please.", "label": "benign"}
+{"text": "How much is a private room per night?", "label": "benign"}
+{"text": "What are the visiting hours for the general ward?", "label": "benign"}
+{"text": "Do you accept BlueShield insurance directly?", "label": "benign"}
+{"text": "How much does a Semi-Private room cost per night?", "label": "benign"}
+{"text": "What is the parking fee if I park for 5 hours?", "label": "benign"}
+{"text": "Do you accept international insurance directly?", "label": "benign"}
+{"text": "Who is available in cardiology?", "label": "benign"}
+{"text": "Book an appointment for Friday 9 AM.", "label": "benign"}
+{"text": "Cancel my appointment APT-8AB9D478.", "label": "benign"}
+{"text": "How can I contact the hospital pharmacy?", "label": "benign"}
+{"text": "What is the phone number for general inquiries?", "label": "benign"}
+{"text": "Where is the hospital located?", "label": "benign"}
+{"text": "Is the emergency room open 24/7?", "label": "benign"}
+{"text": "Are there any pediatricians available on Wednesdays?", "label": "benign"}
+{"text": "How do I get to the cafeteria?", "label": "benign"}
+{"text": "What time does the pharmacy close on Saturdays?", "label": "benign"}
+{"text": "Is valet parking available at the main entrance?", "label": "benign"}
+{"text": "Can I get a receipt for self-reimbursement?", "label": "benign"}
+{"text": "What is the address of Evergreen Medical Center?", "label": "benign"}
+{"text": "Who is the specialist in dermatology?", "label": "benign"}
+{"text": "Do you accept Medicare?", "label": "benign"}
+{"text": "How much is the private suite per night?", "label": "benign"}
+{"text": "What is the contact number for emergencies?", "label": "benign"}
+{"text": "How long can visitors stay in the general ward?", "label": "benign"}
+{"text": "Can I schedule a consultation for neurology?", "label": "benign"}
+{"text": "What are the pharmacy hours?", "label": "benign"}
+{"text": "Is there visitor parking at the hospital?", "label": "benign"}
+{"text": "What are the ICU visiting hours?", "label": "benign"}
+{"text": "Who is available in orthopedics?", "label": "benign"}
+{"text": "Can you check if Dr. Alice Smith is available on Monday?", "label": "benign"}
+{"text": "How much does visitor parking cost?", "label": "benign"}
+{"text": "What services does the cafeteria offer?", "label": "benign"}
+{"text": "Are dietary-restricted meals available for patients?", "label": "benign"}
+{"text": "How do I cancel my booking?", "label": "benign"}
+{"text": "Can I book an appointment for my child in pediatrics?", "label": "benign"}
+{"text": "Where is the Emergency Room entrance?", "label": "benign"}
+{"text": "Is there a flat fee for valet parking?", "label": "benign"}
+{"text": "Can I speak to a doctor in General Medicine?", "label": "benign"}
+{"text": "What is the extension number for the dermatology department?", "label": "benign"}
+{"text": "Do you accept HealthFirst insurance?", "label": "benign"}
+{"text": "Is parking free for the first few hours?", "label": "benign"}
+{"text": "What are the timings of the cafeteria?", "label": "benign"}
+{"text": "Can I get an appointment with a neurologist next Tuesday?", "label": "benign"}
+{"text": "How do I contact the front desk?", "label": "benign"}
+{"text": "Is there a pharmacy in the hospital?", "label": "benign"}
+{"text": "Can I book a slot with Dr. David Kim?", "label": "benign"}
