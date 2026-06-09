@@ -26,6 +26,27 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
+    import sys
+    if os.getenv("NON_INTERACTIVE") != "true":
+        print("\n" + "=" * 60)
+        print("  SELECT ACTIVE INPUT GUARDRAIL ENGINE:")
+        print("=" * 60)
+        print("  1. Regex (Legacy pattern matching - Baseline)")
+        print("  2. Single SetFit (Loaded from Hugging Face Hub / Local)")
+        print("  3. Ensemble SetFit (Loaded from Hugging Face Hub / Local)")
+        print("-" * 60)
+        try:
+            choice = input(f"  Choose engine (1/2/3) [default: {settings.GUARDRAIL_MODE}]: ").strip()
+            if choice == "1":
+                settings.GUARDRAIL_MODE = "regex"
+            elif choice == "2":
+                settings.GUARDRAIL_MODE = "setfit_single"
+            elif choice == "3":
+                settings.GUARDRAIL_MODE = "setfit_ensemble"
+        except (EOFError, Exception):
+            print("  [Non-interactive or reload mode: skipping prompt]")
+        print("=" * 60 + "\n")
+
     def mask(val: str) -> str:
         if not val:
             return "empty"
@@ -39,6 +60,11 @@ async def startup_event():
     logger.info(f"HF_TOKEN: {mask(settings.HF_TOKEN)}")
     logger.info(f"OLLAMA_BASE_URL: {settings.OLLAMA_BASE_URL}")
     logger.info(f"OSS_MODEL_NAME: {settings.OSS_MODEL_NAME}")
+    logger.info(f"GUARDRAIL_MODE: {settings.GUARDRAIL_MODE}")
+    logger.info("----------------------------------------")
+    logger.info(f"FRONTEND (FastAPI):   http://localhost:{settings.PORT}")
+    logger.info(f"FRONTEND (Vite Dev):  http://localhost:5173  (run 'npm run dev' in frontend/)")
+    logger.info(f"API DOCUMENTATION:    http://localhost:{settings.PORT}/docs")
     logger.info("========================================")
 
 # CORS configurations for local frontend development
@@ -229,6 +255,12 @@ async def get_evals_results_endpoint():
     if not results:
         return {"message": "No evaluations have been run yet. Call /api/evals/run to start."}
     return results
+
+@app.get("/api/evals/guardrails")
+async def guardrail_benchmark_endpoint():
+    from backend.app.services.evaluator import EvaluatorService
+    return await EvaluatorService.benchmark_guardrails()
+
 
 @app.get("/api/evals/pdf")
 async def download_pdf_report_endpoint():

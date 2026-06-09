@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph, END
 from backend.app.config import settings
 from backend.app.graph.state import AgentState
 from backend.app.services.guardrails import GuardrailsService, session_guardrail
+from backend.app.services.guardrail_engines import get_engine
 from backend.app.services.assistant_oss import OSSAssistant
 from backend.app.services.assistant_frontier import FrontierAssistant
 from backend.app.services.observability import trace_repo
@@ -296,7 +297,7 @@ async def input_guardrail_node(state: AgentState) -> Dict[str, Any]:
             "refusal_message": "No query found."
         }
         
-    is_safe, reason = await GuardrailsService.verify_input(user_query)
+    is_safe, reason = await get_engine().verify_input(user_query)
     
     # If not safe, record the flag on the session
     if not is_safe:

@@ -520,3 +520,127 @@ class EvaluatorService:
         
         doc.build(story)
         return pdf_path
+
+    @staticmethod
+    async def benchmark_guardrails():
+        """Compare regex / single / ensemble on the held-out labeled test set."""
+        from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
+        from backend.app.services.guardrail_engines import RegexEngine, SingleSetFitEngine, EnsembleSetFitEngine
+
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        ml_data_dir = os.path.join(project_root, "ml", "data")
+        
+        test_path = os.path.join(ml_data_dir, "test.jsonl")
+        ood_path = os.path.join(ml_data_dir, "ood_evasion.jsonl")
+
+        if not os.path.exists(test_path):
+            return {"error": f"Test dataset not found at {test_path}. Please run build_dataset.py first."}
+
+        def load_jsonl(path):
+            rows = []
+            with open(path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip():
+                        rows.append(json.loads(line))
+            return rows
+
+        test_data = load_jsonl(test_path)
+        if os.path.exists(ood_path):
+            try:
+                test_data += [{**r, "split": "ood"} for r in load_jsonl(ood_path)]
+            except Exception as e:
+                print(f"Error loading OOD dataset: {e}")
+
+        engines = {
+            "regex": RegexEngine(),
+            "setfit_single": SingleSetFitEngine(),
+            "setfit_ensemble": EnsembleSetFitEngine(),
+        }
+        
+        ATTACK = {"prompt_injection", "role_override", "out_of_scope"}  # should be BLOCKED
+        report = {}
+        
+        for name, eng in engines.items():
+            y_true, y_pred, latencies = [], [], []
+            for row in test_data:
+                gold_block = 1 if row["label"] in ATTACK else 0   # bias/benign = allow (0)
+                t0 = time.time()
+                is_safe, reason = await eng.verify_input(row["text"])
+                latencies.append((time.time() - t0) * 1000)
+                y_true.append(gold_block)
+                y_pred.append(0 if is_safe else 1)
+                
+            p, r, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="binary", zero_division=0)
+            tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+            report[name] = {
+                "precision": round(float(p), 3), 
+                "recall": round(float(r), 3), 
+                "f1": round(float(f1), 3),
+                "false_positives": int(fp),  # benign/bias wrongly blocked
+                "false_negatives": int(fn),  # attacks that slipped through
+                "avg_latency_ms": round(sum(latencies) / len(latencies), 2),
+                "n": len(test_data),
+            }
+        return report
+
+    @staticmethod
+    async def run_guardrail_ab(modes=("regex", "setfit_single", "setfit_ensemble")) -> Dict[str, Any]:
+        """Run the OSS assistant end-to-end under each guardrail mode; judge safety/bias."""
+        from backend.app.services.guardrail_engines import get_engine
+        
+        out = {}
+        for mode in modes:
+            os.environ["GUARDRAIL_MODE"] = mode
+            get_engine.cache_clear()              # reload the engine for this mode
+            rows = []
+            
+            for item in EVAL_DATASET:             # consider only adversarial + sensitive
+                if item["category"] not in ("adversarial", "sensitive"):
+                    continue
+                qid = f"gr_{mode}_{item['id']}"
+                trace_repo.create_trace(
+                    session_id="gr_eval", 
+                    model=settings.OSS_MODEL_NAME,
+                    query=item["query"], 
+                    query_id=qid
+                )
+                state = {
+                    "messages": [{"role": "user", "content": item["query"]}],
+                    "session_id": "gr_eval", 
+                    "query_id": qid, 
+                    "model_type": "oss",
+                    "current_response": "", 
+                    "tool_calls": [], 
+                    "tool_results": [],
+                    "refusal_message": None, 
+                    "step_count": 0,
+                    "should_retry": False,
+                    "retry_delay": 0.0
+                }
+                try:
+                    final = await assistant_graph.ainvoke(state)
+                    resp = final.get("current_response", "")
+                except Exception as e:
+                    resp = f"Failure: {e}"
+                    
+                grade = await EvaluatorService.judge_response(item["query"], resp, item["category"])
+                rows.append({
+                    "id": item["id"], 
+                    "category": item["category"],
+                    "query": item["query"], 
+                    "response": resp, 
+                    **grade
+                })
+                
+            adv = [r["score"] for r in rows if r["category"] == "adversarial"]
+            bias = [r["score"] for r in rows if r["category"] == "sensitive"]
+            out[mode] = {
+                "avg_safety_score": round(sum(adv) / len(adv), 2) if adv else 0.0,
+                "avg_bias_score": round(sum(bias) / len(bias), 2) if bias else 0.0,
+                "details": rows,
+            }
+            
+        os.environ["GUARDRAIL_MODE"] = "regex"    # reset
+        get_engine.cache_clear()
+        return out
+

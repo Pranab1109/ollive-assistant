@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     # Server configuration
     PORT: int = Field(default=7860, validation_alias="PORT")
     
+    # Guardrail configuration ("regex", "setfit_single", "setfit_ensemble")
+    GUARDRAIL_MODE: str = Field(default="regex", validation_alias="GUARDRAIL_MODE")
+    
+    # Hugging Face Repository Username for guardrails
+    HF_USERNAME: str = Field(default="Pranab11", validation_alias="HF_USERNAME")
+    
     # Enable reading from .env file
     model_config = SettingsConfigDict(
         env_file=".env",
